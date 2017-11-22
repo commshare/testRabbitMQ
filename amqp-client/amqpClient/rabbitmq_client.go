@@ -9,6 +9,12 @@ import (
 	"time"
 )
 
+var enableLogChan = false
+
+func EnableLogChan() bool {
+	return enableLogChan
+}
+
 /*有上限的，最大是1024个*/
 var workersResultStream = make(chan string, 1024)
 
@@ -138,8 +144,11 @@ func (cl *RabbitMqClient) newConsumer(queueName string, callback func(msg []byte
 		/*这个协程不退出都是因为logOnHandleSuccess里有chan阻塞？ TODO */
 		for msg := range msgs {
 			callback(msg.Body, consumerHash)
-			/*可以先不写入，免得阻塞？好像不行，不断的写入chan中*/
-			logOnHandleSuccess(msg.Body)
+			if enableLogChan == true {
+				/*可以先不写入，免得阻塞？好像不行，不断的写入chan中*/
+				logOnHandleSuccess(msg.Body)
+			}
+
 		}
 	}()
 	/*TODO 这里会执行啊newConsumer也会退出，只能靠阻塞的协程来搞起*/

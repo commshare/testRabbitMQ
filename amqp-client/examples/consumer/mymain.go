@@ -35,7 +35,7 @@ func init() {
 	}
 	// initialize the amqb client
 	// inject configuration and a struct that has all AmqpQueues names
-	err := amqpClient.Initialize("V:\\RECORD_TEST\\refref\\testMQ\\amqp-client\\examples\\consumer\\config.yml", AmqpQueues)
+	err := amqpClient.Initialize("V:\\RECORD_TEST\\refref\\config.yml", AmqpQueues)
 	failOnError(err)
 }
 
@@ -68,7 +68,21 @@ func realmAIN(){
 	// ....
 
 	/*TODO 这里不加,会导致main退出，加了就能让consumer不断的执行消费数据*/
-	client.WatchWorkersStream()
+		client.WatchWorkersStream()
+
+}
+func realmAIN2(){
+	client, err := amqpClient.New()
+	failOnError(err)
+	defer client.Disconnect()
+	fmt.Println("------new client ok -----")
+	// getting a list of all the AmqpQueues
+
+	go client.Consume(AmqpQueues.QueueServiceChanges, 2, func(msg []byte, consumer string) {
+		eventHandler2(msg, consumer)
+	})
+
+
 }
 func main(){
 	fmt.Println("---main---new client  -----")
@@ -77,6 +91,13 @@ func main(){
 	fmt.Println("---main---new client  -----")
 	log.Println("----------------------")
 
+	/*TODO 这里不加,会导致main退出，加了就能让consumer不断的执行消费数据*/
+	if amqpClient.EnableLogChan() == true {
+		realmAIN()
+	}else{
+		fmt.Println("----not use log chan-------")
+		realmAIN2()
+	}
 
 	realmAIN()
 	select{}

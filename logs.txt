@@ -1,0 +1,6 @@
+2017/11/22 09:59:34 no name provided for queue : %s  -- details : dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 09:59:34 dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 10:03:23 no name provided for queue : %s  -- details : dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 10:03:23 dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 10:03:43 no name provided for queue : %s  -- details : dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 10:03:43 dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
