@@ -1,0 +1,15 @@
+{
+	"ImportPath": "github.com/almasry/amqp-client",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v79",
+	"Deps": [
+		{
+			"ImportPath": "github.com/streadway/amqp",
+			"Rev": "afe8eee29a74d213b1f3fb2586058157c397da60"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Rev": "a3f3340b5840cee44f372bddb5880fcbc419b46a"
+		}
+	]
+}

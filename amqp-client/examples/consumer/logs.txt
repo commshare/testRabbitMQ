@@ -1,0 +1,14 @@
+2017/11/22 10:04:14 no name provided for queue : %s  -- details : dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 10:04:14 dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 10:04:54 no name provided for queue : %s  -- details : dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 10:04:54 dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 10:06:59 no name provided for queue : %s  -- details : dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 10:06:59 dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 10:07:57 no name provided for queue : %s  -- details : dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 10:07:57 dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 10:25:54 no name provided for queue : %s  -- details : dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 10:25:54 dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 11:29:03 no name provided for queue : %s  -- details : dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 11:29:03 dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 11:30:56 no name provided for queue : %s  -- details : dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
+2017/11/22 11:30:56 dial tcp [::1]:5672: connectex: No connection could be made because the target machine actively refused it.
