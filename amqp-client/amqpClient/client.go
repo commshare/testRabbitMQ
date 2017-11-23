@@ -67,6 +67,9 @@ func logError(err error, msg string) {
 // This method defines the which implementation (of type MessageBrokerClientInterface) is used as a client
 func getMessageBrokerClient() MessageBrokerClientInterface {
 	cl := &RabbitMqClient{}
+	fmt.Println("-----make itemChanSlice")
+	/*TODO 在这里分配内存，初始化为2个元素的slice，https://stackoverflow.com/questions/37690666/create-a-slice-of-buffered-channel-in-golang*/
+	//cl.itemChanSlice=make([]RBElement,2)
 	return cl
 }
 
