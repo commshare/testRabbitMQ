@@ -13,6 +13,8 @@ type RabbitMq struct {
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
 		Uri      string `yaml:"uri"`
+		Exchange string `yaml:"exchange"`
+		Key string `yaml:"key"`
 	}
 	Logs struct {
 		Logfile string `yaml:"logfile"`

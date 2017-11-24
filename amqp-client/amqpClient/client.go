@@ -17,10 +17,50 @@ var (
 func New() (MessageBrokerClientInterface, error) {
 	var cl MessageBrokerClientInterface
 	cl = getMessageBrokerClient()
-	err := cl.Connect()
+	err := cl.Connect("client.go.New")
 	return cl, err
 }
+func Initialize2(configFile string, queues interface{}) (MessageBrokerClientInterface,error) {
 
+	// creating configuring of the message broker
+	c, err := newAppConfiguration(configFile)
+	if err != nil {
+		log.Println(err)
+		return nil,err
+	}
+	config = *c
+
+	/*TODO 关闭输出到文件*/
+	/*输出到文件？*/
+	// setting logs output stream file
+	//setLoggerFile()
+
+	// creating a new client
+	cl, err := New()
+	if err != nil {
+		fmt.Println("Initialize New fail :",err)
+		return nil,err
+	}
+
+	if false {
+		// validating, extracting queues names and creating them
+		queuesNames, err := extractQueuesNames(queues)
+		log.Printf("queuesNames %s",queuesNames)
+		if err != nil {
+			log.Fatalln(err)
+			return nil,err
+		}
+		for _, queue := range queuesNames {
+			log.Println("=======config call===CreateQueue==================")
+			cl.CreateQueue(queue)
+		}
+	}else{
+		log.Println("...........not create queue ....")
+	}
+
+
+	return cl,nil
+}
 // Initialize : function takes care of two things : it parses the config of the amqb system,
 // and creates the queues as binds them to the default exchange
 func Initialize(configFile string, queues interface{}) error {
@@ -41,19 +81,26 @@ func Initialize(configFile string, queues interface{}) error {
 	// creating a new client
 	cl, err := New()
 	if err != nil {
+		fmt.Println("Initialize New fail :",err)
 		return err
 	}
 
-	// validating, extracting queues names and creating them
-	queuesNames, err := extractQueuesNames(queues)
-	log.Printf("queuesNames %s",queuesNames)
-	if err != nil {
-		log.Fatalln(err)
-		return err
+	if false {
+		// validating, extracting queues names and creating them
+		queuesNames, err := extractQueuesNames(queues)
+		log.Printf("queuesNames %s",queuesNames)
+		if err != nil {
+			log.Fatalln(err)
+			return err
+		}
+		for _, queue := range queuesNames {
+			log.Println("=======config call===CreateQueue==================")
+			cl.CreateQueue(queue)
+		}
+	}else{
+		log.Println("...........not create queue ....")
 	}
-	for _, queue := range queuesNames {
-		cl.CreateQueue(queue)
-	}
+
 
 	return nil
 }

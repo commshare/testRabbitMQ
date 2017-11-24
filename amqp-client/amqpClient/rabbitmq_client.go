@@ -22,7 +22,10 @@ var workersResultStream = make(chan string, 1024)
 //streadway/amqp can be easily replaced with other implementations, all is need is a struct of type MessageBrokerClientInterface
 type RabbitMqClient struct {
 	channel *amqp.Channel
-	itemChanSlice[] RBElement
+	//itemChanSlice[] RBElement
+	done    chan error
+	queue amqp.Queue
+
 }
 /*https://stackoverflow.com/questions/37690666/create-a-slice-of-buffered-channel-in-golang*/
 type RBElement chan Element
@@ -40,13 +43,22 @@ func init() {
 }
 
 //Connect connects the client to the amqp server
-func (cl *RabbitMqClient) Connect() error {
+func (cl *RabbitMqClient) Connect(caller string) error {
+	fmt.Println("=======caller",caller,"===========1 dial ")
 	// creating a new connection to the amqp
-	conn, err := amqp.Dial(connectionURL())
+	uri:=connectionURL()
+	log.Println("uri:",uri)
+	conn, err := amqp.Dial(uri)
 	if err != nil {
 		logError(err, errFailedToConnectToRabbitMq)
 		return err
 	}
+	go func() {
+		fmt.Printf("---closing: %s", <-conn.NotifyClose(make(chan *amqp.Error)))
+	}()
+	log.Printf("got Connection, getting Channel")
+
+	fmt.Println("============2 got channel===")
 	// creating a connection channel (aka socket)  /*连接用的channel又名socket*/
 	ch, err := conn.Channel()
 	if err != nil {
@@ -55,12 +67,64 @@ func (cl *RabbitMqClient) Connect() error {
 	}
 
 	cl.channel = ch
+	exchange := config.RabbitMq.Connection.Exchange
+	log.Printf("==========3  got Channel, declaring Exchange (%q)", exchange)
+	if err = cl.channel.ExchangeDeclare(
+		exchange,     // name of the exchange
+		"topic", // type
+		true,         // durable
+		false,        // delete when complete
+		false,        // internal
+		false,        // noWait
+		nil,          // arguments
+	); err != nil {
+		 err= fmt.Errorf("ERR Exchange Declare: %s", err)
+		 fmt.Printf("ERR Exchange Declare: %s \n", err)
+		 return err
+	}
+	/**/
+	queueName := "TEST_vodimg"
+	log.Printf("=========4 declared Exchange, declaring Queue %q", queueName)
+	cl.queue, err = cl.channel.QueueDeclare(
+		queueName, // name of the queue
+		true,      // durable
+		false,     // delete when usused
+		false,     // exclusive
+		false,     // noWait
+		nil,       // arguments
+	)
+	if err != nil {
+		err = fmt.Errorf(errFailedToCreateQueue, queueName)
+		log.Println(err)
+		return err
+	}
+	key:=	config.RabbitMq.Connection.Key
+	log.Printf("declared Queue (%q %d messages, %d consumers), binding to Exchange (key %q)",
+		cl.queue.Name, cl.queue.Messages, cl.queue.Consumers, key)
+
+	if err = cl.channel.QueueBind(
+		cl.queue.Name, // name of the queue
+		key,        // bindingKey
+		exchange,   // sourceExchange
+		false,      // noWait
+		nil,        // arguments
+	); err != nil {
+		err= fmt.Errorf("FAIL Queue Bind: %s", err)
+		log.Println(err)
+		return err
+	}
+
+//	log.Printf("Queue bound to Exchange, starting Consume (consumer tag %q)", cl.tag)
+
+	log.Printf("------5------declared Queue (%q %d messages, %d consumers), binding to Exchange (key %q)",
+		cl.queue.Name, cl.queue.Messages, cl.queue.Consumers, key)
 	return nil
 }
 
 /*断开到服务器的连接*/
 //Disconnect closes the connection (channel) with the amqp server
 func (cl *RabbitMqClient) Disconnect() error {
+	fmt.Println("----Disconnect----")
 	return cl.channel.Close()
 }
 
@@ -75,7 +139,7 @@ func (cl *RabbitMqClient) CreateQueue(queueName string) error {
 		false,     // no-wait
 		nil,       // arguments
 	)
-	fmt.Println("creating queue ", queueName)
+	fmt.Println("========4=======creating queue ", queueName)
 	if err != nil {
 		err = fmt.Errorf(errFailedToCreateQueue, queueName)
 		log.Println(err)
@@ -108,7 +172,7 @@ func (cl *RabbitMqClient) Publish(event SerializableEventInterface, queueName st
 }
 //Consume is used to consume events / messages from a specific queue.
 //A callback function is required as a parameter, and it' called whn a new message has been received
-func (cl *RabbitMqClient) Consume2(queueName string, workers uint, callback func(items chan Element, consumer string)) error {
+func (cl *RabbitMqClient) Subscribe(queueName string, workers uint, callback func(items chan Element, consumer string)) error {
 	fmt.Println("------------begin of Consume2----------")
 
 	if workers < 1 {
@@ -129,7 +193,7 @@ func (cl *RabbitMqClient) createConsumer(queueName string, callback func(itemCha
 	consumerHash := consumerHashValue(queueName, rank)
 	log.Println("--gen consumerHash ok ",consumerHash)
 	msgs, err := cl.channel.Consume(
-		queueName,    // queue
+		cl.queue.Name,    // queue
 		consumerHash, // consumer
 		true,         // auto-ack
 		false,        // exclusive
@@ -139,9 +203,9 @@ func (cl *RabbitMqClient) createConsumer(queueName string, callback func(itemCha
 	)
 	log.Println("---after cl.channel.Consume ")
 	log.Println("make chan for rank ",rank)
-	if false {
-		cl.itemChanSlice[rank]=make(chan Element,100)
-	}
+	//if false {
+	//	cl.itemChanSlice[rank]=make(chan Element,100)
+	//}
 
 	//items = make(chan Msg,100)
 	if err != nil {
@@ -154,14 +218,14 @@ func (cl *RabbitMqClient) createConsumer(queueName string, callback func(itemCha
 		/*这个协程不退出都是因为logOnHandleSuccess里有chan阻塞？ TODO */
 		for msg := range msgs {
 			if false {
-				item := Element{
-					Body:msg.Body,
-					ack:msg.Ack,
-					nack:msg.Nack,
-				}
+				//item := Element{
+				//	Body:msg.Body,
+				//	ack:msg.Ack,
+				//	nack:msg.Nack,
+				//}
 				//	var items chan Element
-				cl.itemChanSlice[rank] <- item
-				callback(cl.itemChanSlice[rank], consumerHash)
+				//cl.itemChanSlice[rank] <- item
+				//callback(cl.itemChanSlice[rank], consumerHash)
 			}else{
 				log.Println("msg:",msg)
 			}
@@ -178,6 +242,68 @@ func (cl *RabbitMqClient) createConsumer(queueName string, callback func(itemCha
 
 	return nil
 }
+//T3Consume
+//Consume is used to consume events / messages from a specific queue.
+//A callback function is required as a parameter, and it' called whn a new message has been received
+func (cl *RabbitMqClient) T3Consume(queueName string, workers uint, callback func(msg []byte, consumer string)) error {
+	fmt.Println("begin of T3Consume")
+	if workers < 1 {
+		err := fmt.Errorf(errWorkersRegisteredForQueue, queueName)
+		log.Println(err, nil)
+		return err
+	}
+	fmt.Println("T3Consume call newConsumer ")
+	for i := 1; i <= int(workers); i++ {
+		/*这里加了go也会卡consumne啊*/
+		cl.newConsumer(queueName, callback, i)
+	}
+	/*TODO 这里也会执行啊，consume会退出*/
+	fmt.Println("------------end of T3Consume----------")
+	return nil
+}
+//creates a new consumer
+func (cl *RabbitMqClient) newT3Consumer(queueName string, callback func(msg []byte, consumer string), rank int) error {
+	consumerHash := consumerHashValue(queueName, rank)
+	fmt.Println("------------begin of newConsumer------rank ----",rank,"consumerHash :",consumerHash)
+	log.Printf("----declared Queue (%q %d messages, %d consumers), binding to Exchange (key )",
+		cl.queue.Name, cl.queue.Messages, cl.queue.Consumers)
+	/*用go的方案，会卡在这里*/
+	msgs, err := cl.channel.Consume(
+		cl.queue.Name,    // queue
+		consumerHash, // consumer
+		false,         // auto-ack  /*这里一直都是true TODO */
+		false,        // exclusive
+		false,        // no-local
+		false,        // no-wait
+		nil,          // args
+	)
+	log.Println("msgs:",msgs)
+	if err != nil {
+		err = fmt.Errorf(errFailedToCreateConsumer, queueName)
+		return err
+	}
+
+	log.Println(consumerHash, " .. was created")
+	go handle(msgs,cl.done)
+	/*TODO 这里会执行啊newConsumer也会退出，只能靠阻塞的协程来搞起*/
+	fmt.Println("------------end of newT3Consumer----------")
+
+	return nil
+}
+func handle(deliveries <-chan amqp.Delivery, done chan error) {
+	for d := range deliveries {
+		log.Printf(
+			"got %dB delivery: [%v] %q",
+			len(d.Body),
+			d.DeliveryTag,
+			d.Body,
+		)
+		d.Ack(false)
+	}
+	log.Printf("handle: deliveries channel closed")
+	done <- nil
+}
+
 //Consume is used to consume events / messages from a specific queue.
 //A callback function is required as a parameter, and it' called whn a new message has been received
 func (cl *RabbitMqClient) Consume(queueName string, workers uint, callback func(msg []byte, consumer string)) error {
@@ -200,10 +326,11 @@ func (cl *RabbitMqClient) Consume(queueName string, workers uint, callback func(
 func (cl *RabbitMqClient) newConsumer(queueName string, callback func(msg []byte, consumer string), rank int) error {
 	consumerHash := consumerHashValue(queueName, rank)
 	fmt.Println("------------begin of newConsumer------rank ----",rank,"consumerHash :",consumerHash)
+	/*用go的方案，会卡在这里*/
 	msgs, err := cl.channel.Consume(
 		queueName,    // queue
 		consumerHash, // consumer
-		true,         // auto-ack
+		true,         // auto-ack  /*这里一直都是true TODO */
 		false,        // exclusive
 		false,        // no-local
 		false,        // no-wait

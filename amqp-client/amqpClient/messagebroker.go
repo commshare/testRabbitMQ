@@ -11,11 +11,13 @@ type Element struct {
 //MessageBrokerClientInterface : to create a message broker client, the client must implement this interface
 //so that it can be used by other system components
 type MessageBrokerClientInterface interface {
-	Connect() error
+	Connect(caller string) error
 	Disconnect() error
 	CreateQueue(queueName string) error
 	Publish(event SerializableEventInterface, queueName string) error
 	Consume(queueName string, workers uint, callback func(msg []byte, consumer string)) error
 	WatchWorkersStream()
-	Consume2(queueName string, workers uint, callback func(items chan Element, consumer string)) error
+	Subscribe(queueName string, workers uint, callback func(items chan Element, consumer string)) error
+	T3Consume(queueName string, workers uint, callback func(msg []byte, consumer string)) error
+
 }
